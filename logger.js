@@ -13,4 +13,4 @@ function logUser(req, res, next) {
 }
 
 
-module.exports = logUser
+module.exports = {logUser}
