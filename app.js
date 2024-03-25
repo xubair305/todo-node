@@ -1,11 +1,28 @@
 const express = require('express')
-const tasks = require('./task_data.json')
+const mongoose = require('mongoose')
 const logUser = require('./logger')
 const customHeader = require('./custom_header')
-const fs = require('fs')
 const app = express()
 const port = 3000
 
+
+// Connection to mongoDB
+mongoose.connect("mongodb://127.0.0.1:27017/todo-app",)
+    .then(() => console.log('Connected to MongoDB'))
+    .catch((err) => console.error('Failed to connect to MongoDB', err))
+
+// Create schema for mongoDb 
+const taskScheme = mongoose.Schema({
+    title: {
+        type: String,
+        required: true
+    },
+    isCompleted: {
+        type: Boolean,
+        required: true
+    }
+}, { timestamps: true })
+let Task = mongoose.model('task', taskScheme);
 
 // middleware for parsing URL-encoded data 
 app.use(express.json());
@@ -18,88 +35,51 @@ app.use(customHeader)
 
 app.get('/', (req, res) => res.send('Hello World!'))
 
-app.get('/api/tasks', (req, res) => {
-    return res.json({status: true,message:"Task fetched", "tasks": tasks })
+app.get('/api/tasks', async (req, res) => {
+    const allTasksFromDB =  await  Task.find({})
+    return res.json({ status: true, message: "Task fetched", "tasks": allTasksFromDB })
 }
 )
 
 
 app.route('/api/task/:id')
-    .get((req, res) => {
-        const id = Number(req.params.id)
-        const task = tasks.find((task) => task.id === id)
+    .get( async (req, res) => {
+        const task  = await Task.findById(req.params.id)
+        if(!task) return res.status(404).json({ status: true, message: "Task not found" })
         return res.status(200).json({ status: true, message: "Task fetched", task: task });
     }
     )
-    .delete((req, res) => {
-
-        const id = parseInt(req.params.id);
-        if (isNaN(id)) {
-            return res.status(400).json({ status: false, message: "Invalid ID provided" });
-        }
-
-
-        const index = tasks.findIndex((task) => {
-            const taskId = parseInt(task.id)
-            return taskId === id
-        })
-
-        if (index === -1) {
-            return res.status(404).json({ status: false, message: "Record not found" });
-        }
-        const deleteTask = tasks.splice(index, 1)
-
-        console.log(deleteTask)
-
-        fs.writeFile('./task_data.json', JSON.stringify(tasks), (error) => {
-            if (!error) {
-                return res.status(200).json({ status: true, message: "Task deleted" });
-            } else {
-                return res.status(500).json({ status: false, message: "Something went wrong!" });
-            }
-        })
-
+    .delete( async (req, res) => {
+        // Delete task from MongoDB
+        const result = await Task.findByIdAndDelete(req.params.id)
+        if (!result) return res.status(404).json({ status: false, message: 'No such task exists' }) 
+        return res.status(200).json({ status: true, message: "Task deleted" });
     })
 
 app.route('/api/task')
-    .post((req, res) => {
+    .post(async (req, res) => {
         const task = req.body
-        tasks.push({ "id": tasks.length + 1, ...task })
-        fs.writeFile('./task_data.json', JSON.stringify(tasks), (err, data) => {
-            console.log(err);
-            if (!err) {
-                return res.status(201).json({ status: true, message: "Task added" });
-            } else {
-                return res.status(500).json({ status: false, message: "Something went wrong" });
-            }
+
+        const result = await Task.create({
+            title: task.title,
+            isCompleted: task.isCompleted
         })
+
+        if(!result) return res.status(500).json({ status: false, message: "Something went wrong" });
+
+        return res.status(201).json({ status: true, message: "Task added" });
+
     })
-    .patch((req, res) => {
+    .patch( async (req, res) => {
 
-        const id = parseInt(req.body.id);
-        if (isNaN(id)) {
-            return res.status(400).json({ status: false, message: "Invalid ID provided" });
-        }
-        const updatedTask = { ...req.body }
+        const id = req.body.id;
+        const task = req.body;
 
-        const index = tasks.findIndex((task) => {
-            const taskId = parseInt(task.id)
-            return taskId === id
-        })
+        await Task.findByIdAndUpdate(id, {title:task.title,isCompleted: task.isCompleted})
+        return res.status(200).json({ status: true, message: "Task updated" });
 
-        if (index === -1) {
-            return res.status(404).json({ status: false, message: "Record not found" });
-        }
-
-        tasks[index] = updatedTask;
-
-        fs.writeFile('./task_data.json', JSON.stringify(tasks), (error) => {
-            if (!error) {
-                return res.status(200).json({ status: true, message: "Task updated" });
-            } else {
-                return res.status(500).json({ status: false, message: "Something went wrong!" });
-            }
-        })
+       // return res.status(500).json({ status: false, message: "Something went wrong!" });
+        
     })
 
 app.get("*", (req, res) => {
