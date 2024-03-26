@@ -8,7 +8,7 @@ const customHeader = require('./custom_header')
 const taskRouter = require('./routes/task')
 const {connectDb} = require('./connection')
 
-const port = 3000
+const port = process.env.PORT
 
 // middleware for parsing URL-encoded data 
 app.use(express.json());
@@ -21,7 +21,8 @@ app.use(customHeader)
 
 
 // Connect to mongoDb Database
-connectDb("mongodb://127.0.0.1:27017/todo-app")
+// connectDb("mongodb://127.0.0.1:27017/todo-app")
+connectDb(process.env.MONGO_URL)
 
 //  Setup routes
 app.use('/api/task', taskRouter)

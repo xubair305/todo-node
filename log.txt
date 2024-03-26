@@ -177,3 +177,5 @@
 {"timestamp":1711366626302,"url":"/api/task","method":"GET","ip_address":"::1"}
 {"timestamp":1711366627501,"url":"/api/task","method":"GET","ip_address":"::1"}
 {"timestamp":1711367386094,"url":"/api/task","method":"GET","ip_address":"::1"}
+{"timestamp":1711429715993,"url":"/api/task","method":"POST","ip_address":"::1"}
+{"timestamp":1711430056906,"url":"/api/task","method":"GET","ip_address":"::1"}
