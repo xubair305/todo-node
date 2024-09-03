@@ -76,6 +76,9 @@ sudo apt install nginx
 ##### *This work on root of the machine
 ```
 sudo nano /etc/nginx/sites-available/default
+
+To enable other site
+sudo ln -s /etc/nginx/sites-available/example.com /etc/nginx/sites-enabled/
 ```
 Add the following to the location part of the server block
 ```
@@ -96,6 +99,9 @@ sudo nginx -t
 
 # Restart NGINX
 sudo nginx -s reload
+OR
+systemctl restart nginx
+
 ```
 
 ## 8. Add SSL with LetsEncrypt
